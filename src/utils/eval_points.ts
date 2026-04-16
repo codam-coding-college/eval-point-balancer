@@ -66,8 +66,8 @@ export const addPointsToPool = async function(api: Fast42, userId: number | stri
 				correction_points: user.correction_point
 			},
 			points: {
-				old: pool.current_points,
-				current: pool.current_points + pointsToAdd,
+				old: pool.current_points - pointsToAdd,
+				current: pool.current_points,
 			},
 			max_points: pool.max_points,
 		};
