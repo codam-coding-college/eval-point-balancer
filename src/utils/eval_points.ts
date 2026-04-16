@@ -1,6 +1,6 @@
 import Fast42 from "@codam/fast42"
 import { Pool, PoolPointGiven, StandardUser } from "../interfaces";
-import { CAMPUS_ID, CURSUS_ID, DESIRED_AVG_EVAL_POINTS, MAX_EVAL_POINTS, POOL_ID, WEBHOOK_SECRET_COALITION_POINT_DONATION, WEBHOOK_URL_COALITION_POINT_DONATION } from "../env";
+import { CAMPUS_ID, CURSUS_ID, DESIRED_AVG_EVAL_POINTS, MAX_EVAL_POINTS, NODE_ENV, POOL_ID, WEBHOOK_SECRET_COALITION_POINT_DONATION, WEBHOOK_URL_COALITION_POINT_DONATION } from "../env";
 import { MAX, v4 as uuidv4 } from 'uuid';
 import { fetchMultiple42ApiPagesCallback } from "./fast42";
 import { getUserById, getUserByLogin, parseStandardUser } from "./users";
@@ -14,6 +14,10 @@ export const getUserEvalPointAmount = async function(api: Fast42, userId: number
 };
 
 export const removeUserEvalPoints = async function(api: Fast42, userId: number | string, pointsToRemove: number, reason: string) {
+	if (NODE_ENV !== 'production') {
+		console.log(`[DEV MODE] Would remove ${pointsToRemove} eval points from user ${userId} for reason: ${reason}`);
+		return;
+	}
 	const req = await api.post(`/users/${userId}/correction_points/remove`, {
 		amount: pointsToRemove,
 		reason: reason
@@ -24,6 +28,10 @@ export const removeUserEvalPoints = async function(api: Fast42, userId: number |
 };
 
 export const addPointsToPool = async function(api: Fast42, userId: number | string | null, pointsToAdd: number) {
+	if (NODE_ENV !== 'production') {
+		console.log(`[DEV MODE] Would add ${pointsToAdd} points to the pool from user ${userId}`);
+		return;
+	}
 	const reqIntra = await api.post(`/pools/${POOL_ID}/points/add`, {
 		points: pointsToAdd,
 	});
@@ -80,6 +88,10 @@ export const addPointsToPool = async function(api: Fast42, userId: number | stri
 };
 
 export const removePointsFromPool = async function(api: Fast42, pointsToRemove: number, removeToZero: boolean = false) {
+	if (NODE_ENV !== 'production') {
+		console.log(`[DEV MODE] Would remove ${pointsToRemove} points from the pool`);
+		return;
+	}
 	const pool = await getPool(api, POOL_ID);
 	if (!pool) {
 		throw new Error(`Failed to fetch pool data for pool ${POOL_ID} to remove points from the pool`);
@@ -91,7 +103,7 @@ export const removePointsFromPool = async function(api: Fast42, pointsToRemove: 
 		console.warn(`Cannot remove ${pointsToRemove} points from the pool, because it only has ${pool.current_points} points. Removing all remaining points from the pool instead because removeToZero is set to true.`);
 		pointsToRemove = pool.current_points;
 	}
-	const req = await api.post(`/pools/${POOL_ID}/points/remove`, {
+	const req = await api.delete(`/pools/${POOL_ID}/points/remove`, {
 		points: pointsToRemove,
 	});
 	if (!req.ok) {
