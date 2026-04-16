@@ -42,6 +42,7 @@ export const addPointsToPool = async function(api: Fast42, userId: number | stri
 	// Trigger webhook for point donation in the coalition system manually.
 	// Intra won't do it for us, as you cannot donate points as a user using the API, only anonymously.
 	if (userId && WEBHOOK_URL_COALITION_POINT_DONATION && WEBHOOK_SECRET_COALITION_POINT_DONATION) {
+		console.log(`Triggering coalition system webhook for donation of ${pointsToAdd} points to the pool from user ${userId}...`);
 		const pool = await getPool(api, POOL_ID);
 		if (!pool) {
 			throw new Error(`Failed to fetch pool data for pool ${POOL_ID} to trigger coalition point donation webhook for user ${userId}`);
@@ -77,7 +78,7 @@ export const addPointsToPool = async function(api: Fast42, userId: number | stri
 				'X-Secret': WEBHOOK_SECRET_COALITION_POINT_DONATION,
 				'X-Model': 'pool',
 				'X-Event': 'point_given',
-				'X-Delivery': `balancer-${uuidv4().substring(8)}`,
+				'X-Delivery': `balancer-${uuidv4().substring(9)}`,
 			},
 			body: JSON.stringify(PoolPointGivenData),
 		});
