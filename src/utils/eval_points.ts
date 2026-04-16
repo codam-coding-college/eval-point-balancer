@@ -18,7 +18,7 @@ export const removeUserEvalPoints = async function(api: Fast42, userId: number |
 		console.log(`[DEV MODE] Would remove ${pointsToRemove} eval points from user ${userId} for reason: ${reason}`);
 		return;
 	}
-	const req = await api.post(`/users/${userId}/correction_points/remove`, {
+	const req = await api.delete(`/users/${userId}/correction_points/remove`, {
 		amount: pointsToRemove,
 		reason: reason
 	});
@@ -130,7 +130,7 @@ export const trimUserExcessPoints = async function(api: Fast42, userId: number |
 	if (currentEvalPoints > MAX_EVAL_POINTS) {
 		const excessPoints = currentEvalPoints - MAX_EVAL_POINTS;
 		console.log(`User ${userId} has ${currentEvalPoints} eval points, which exceeds the maximum of ${MAX_EVAL_POINTS}. Removing ${excessPoints} excess points by donating them to the pool.`);
-		// await forceDonatePoints(api, userId, excessPoints);
+		await forceDonatePoints(api, userId, excessPoints);
 	}
 };
 
@@ -167,7 +167,12 @@ export const actOnAllActiveUsers = async function(api: Fast42, action: (user: St
 export const trimAllExcessPointsNow = async function(api: Fast42) {
 	console.log(`Trimming excess points for all users in cursus ${CURSUS_ID} of campus ${CAMPUS_ID}...`);
 	await actOnAllActiveUsers(api, async (user) => {
-		await trimUserExcessPoints(api, user.login, user.correction_point);
+		try {
+			await trimUserExcessPoints(api, user.login, user.correction_point);
+		}
+		catch (err) {
+			console.error(`Failed to trim excess points for user ${user.login}: ${err instanceof Error ? err.message : String(err)}`);
+		}
 	});
 };
 
@@ -191,14 +196,19 @@ export const balanceEconomy = async function(api: Fast42) {
 		console.log(`The average points per user in the economy exceeds the desired average. Reducing the amount of points in the pool to balance the economy...`);
 		const excess_points = total_points - (DESIRED_AVG_EVAL_POINTS * active_user_count);
 		console.log(`Removing ${excess_points} excess points from the pool...`);
-		// await removePointsFromPool(api, excess_points);
+		await removePointsFromPool(api, excess_points);
 		console.log(`Economy balanced successfully.`);
 	}
 	else if (avg_points < DESIRED_AVG_EVAL_POINTS) {
 		console.log(`The average points per user in the economy is below the desired average. Adding points to the pool to balance the economy...`);
 		const needed_points = Math.ceil((DESIRED_AVG_EVAL_POINTS * active_user_count) - total_points);
+		if (needed_points > pool.max_points * 2) {
+			console.warn(`Attempting to add an extreme amount of evaluation points to the pool (${needed_points} points, which is more than twice the pool's maximum capacity of ${pool.max_points} points). This likely indicates a bug or an issue with the eval point economy. Aborting to prevent potential damage to the economy.`);
+			return;
+		}
+
 		console.log(`Adding ${needed_points} points to the pool...`);
-		// await addPointsToPool(api, null, needed_points);
+		await addPointsToPool(api, null, needed_points);
 		console.log(`Economy balanced successfully.`);
 	}
 	else {

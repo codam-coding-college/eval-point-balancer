@@ -15,6 +15,8 @@ import { balanceEconomy, trimAllExcessPointsNow } from './utils/eval_points';
 export let api: Fast42 | null = null;
 
 const main = async () => {
+	console.log(`Starting Eval Point Balancer in ${NODE_ENV} mode...`);
+
 	// Set up the Express app
 	const app = express();
 
