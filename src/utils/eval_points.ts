@@ -196,7 +196,7 @@ export const balanceEconomy = async function(api: Fast42) {
 		console.log(`The average points per user in the economy exceeds the desired average. Reducing the amount of points in the pool to balance the economy...`);
 		const excess_points = total_points - (DESIRED_AVG_EVAL_POINTS * active_user_count);
 		console.log(`Removing ${excess_points} excess points from the pool...`);
-		await removePointsFromPool(api, excess_points);
+		await removePointsFromPool(api, excess_points, true);
 		console.log(`Economy balanced successfully.`);
 	}
 	else if (avg_points < DESIRED_AVG_EVAL_POINTS) {
