@@ -31,7 +31,7 @@ export const setupRoutes = function(app: Express): void {
 		}
 
 		switch (XModel) {
-			case 'ScaleTeam':
+			case 'scale_team':
 				if (XEvent === 'update' && XSecret === WEBHOOK_SECRET_SCALE_TEAM_UPDATE) {
 					try {
 						const scaleTeam = parseScaleTeamUpdate(req.body);
