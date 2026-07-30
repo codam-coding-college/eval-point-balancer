@@ -14,37 +14,21 @@ export const fetchMultiple42ApiPagesCallback = async function(api: Fast42, path:
 	return new Promise(async (resolve, reject) => {
 		try {
 			const pages = await api.getAllPages(path, params);
-
 			let i = 0;
-			for (const page of pages) {
+			await Promise.all(pages.map(async (page, idx) => {
 				let p = null;
-				while (!p) {
-					p = await page;
-					if (!p) {
-						console.log('Retrying page fetch...');
-						await new Promise((resolve) => setTimeout(resolve, 1000));
-						continue;
-					}
-					if (p.status == 429) {
-						console.error('Intra API rate limit exceeded, let\'s wait a bit...');
-						const waitFor = parseInt(p.headers.get('Retry-After'));
-						console.log(`Waiting ${waitFor} seconds...`);
-						await new Promise((resolve) => setTimeout(resolve, waitFor * 1000 + Math.random() * 1000));
-						p = null;
-						continue;
-					}
-					if (!p.ok) {
-						throw new Error(`Intra API error: ${p.status} ${p.statusText} on ${p.url}`);
-					}
+				p = await page;
+				if (!p.ok) {
+					const rawdata = await p.text();
+					throw new Error(`Intra API error: ${p.status} ${p.statusText} on ${p.url}. Response: ${rawdata}`);
 				}
-				if (p.ok) {
-					const xPage = parseInt(p.headers.get('X-Page'));
-					const xTotal = parseInt(p.headers.get('X-Total'));
-					const data = await p.json();
-					console.debug(`Fetched page ${++i} of ${pages.length} on ${path}...`);
-					callback(data, xPage, xTotal);
-				}
-			}
+				const xPage = parseInt(p.headers.get('X-Page') ?? '0');
+				const xTotal = parseInt(p.headers.get('X-Total') ?? '0'); // total amount of items, not total amount of pages
+				const xPerPage = parseInt(p.headers.get('X-Per-Page') ?? '0');
+				const data = await p.json();
+				console.debug(`Fetched page ${++i} of ${pages.length} on ${path}...`);
+				await callback(data, xPage, xTotal);
+			}));
 			return resolve();
 		}
 		catch (err) {
