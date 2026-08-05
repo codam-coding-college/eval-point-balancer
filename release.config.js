@@ -7,7 +7,7 @@ module.exports = {
 		[
 			"@semantic-release/exec",
 			{
-				publishCmd: 'docker tag ${REGISTRY}/${IMAGE_NAME} ${REGISTRY}/${IMAGE_NAME}:${nextRelease.version} && docker push ${REGISTRY}/${IMAGE_NAME}:${nextRelease.version}'
+				publishCmd: 'docker tag $REGISTRY/$IMAGE_NAME $REGISTRY/$IMAGE_NAME:${nextRelease.version} && docker push $REGISTRY/$IMAGE_NAME:${nextRelease.version}'
 			}
 		],
 		[
