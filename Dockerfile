@@ -5,6 +5,14 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install
 
+FROM node:22-bullseye as prod-deps
+WORKDIR /app
+
+# Production dependencies only, so typescript and the @types packages used to build
+# do not ship in the runtime image.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
 FROM node:22-bullseye as builder
 WORKDIR /app
 
@@ -21,7 +29,7 @@ WORKDIR /app
 ENV NODE_ENV production
 
 COPY --from=builder /app/build ./build
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 4000
